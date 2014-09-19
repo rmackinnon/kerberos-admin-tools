@@ -1,0 +1,5 @@
+#!/bin/bash
+
+principal=$1
+keytab=$2
+kadmin.local -q "ktadd -k ${keytab} ${principal}"

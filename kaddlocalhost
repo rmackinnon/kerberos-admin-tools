@@ -1,0 +1,13 @@
+#!/bin/bash
+
+hostname=$1
+#REALM=$2
+keytab=/etc/krb5.keytab
+hostnameLC=`echo ${hostname} | tr A-Z a-z`
+hostnameUC=`echo ${hostname} | tr a-z A-Z`
+
+for p in "host/${hostnameLC}" "host/${hostnameLC^}" "host/${hostnameUC}";
+do
+	./kaddprinc "${p}" "-randkey -policy host"
+	./kaddkeytab "${p}" "${keytab}"
+done

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+username=$1
+keytab=$2
+
+./kaddprinc "${username}" "-policy user"
+
+if [ -n "${keytab}" ]; then
+	./kaddkeytab "${username}" ${keytab}
+fi;

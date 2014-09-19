@@ -1,0 +1,17 @@
+#!/bin/bash
+
+hostname=$1
+keytab=$2
+hostnameLC=`echo ${hostname} | tr A-Z a-z`
+hostnameUC=`echo ${hostname} | tr a-z A-Z`
+
+for p in "host/${hostnameLC}" "host/${hostnameLC^}" "host/${hostnameUC}";
+do
+	./kaddprinc "${p}" "-policy host_MS"
+
+	if [ -n "${keytab}" ]; then
+		./kaddkeytab "host/${hostnameLC}" ${keytab}
+	fi;
+
+	kadmin.local -q "change_password ${p}"
+done

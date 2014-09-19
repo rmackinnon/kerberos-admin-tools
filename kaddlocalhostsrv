@@ -1,0 +1,14 @@
+#!/bin/bash
+
+service=$1
+hostname=$2
+#REALM=$2
+keytab=/etc/krb5.keytab
+hostnameLC=`echo ${hostname} | tr A-Z a-z`
+hostnameUC=`echo ${hostname} | tr a-z A-Z`
+
+for p in "host/${hostnameLC}" "host/${hostnameLC^}" "host/${hostnameUC}";
+do
+	./kaddaddprinc "${p}" "-randkey -policy service"
+	./kaddkeytab "${p}" ${keytab}
+done

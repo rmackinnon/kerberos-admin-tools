@@ -1,0 +1,15 @@
+#!/bin/bash
+
+hostname=$1
+keytab=$2
+hostnameLC=`echo ${hostname} | tr A-Z a-z`
+hostnameUC=`echo ${hostname} | tr a-z A-Z`
+
+for p in "host/${hostnameLC}" "host/${hostnameLC^}" "host/${hostnameUC}";
+do
+	./kaddprinc "${p}" "-randkey -policy host"
+
+	if [ -n "${keytab}" ]; then
+		./kaddkeytab "${p}" ${keytab}
+	fi;
+done

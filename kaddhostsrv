@@ -1,0 +1,16 @@
+#!/bin/bash
+
+service=$1
+hostname=$2
+keytab=$3
+hostnameLC=`echo ${hostname} | tr A-Z a-z`
+hostnameUC=`echo ${hostname} | tr a-z A-Z`
+
+for p in "${service}/${hostnameLC}" "${service}/${hostnameLC^}" "${service}/${hostnameUC}";
+do
+	./kaddprinc "${p}" "-randkey -policy service"
+
+	if [ -n "${keytab}" ]; then
+		./kaddkeytab "${p}" ${keytab}
+	fi;
+done
