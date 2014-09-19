@@ -7,37 +7,39 @@ Predefined Policies: user, host, host_MS, service
 
 Usage
 =====
-- kaddprinc \<principal\> "\<options\>"
-
-Runs kadmin.local with command "addprinc"
-
-- kaddkeytab \<principal\> \<keytabFile\>
-
-Runs kadmin.local with command "ktadd"
-
-- kadduser \<principal\> \[\<keytabFile\>\]
-
+```
+kaddprinc <principal> ["<options>"]
+```
+Runs kadmin.local with command "addprinc \[\<options\>] \<principal\>"
+```
+kaddkeytab <principal> <keytabFile>
+```
+Runs kadmin.local with command "ktadd -k \<keytabFile\> \<principal\>"
+```
+kadduser <principal> [<keytabFile>]
+```
 Scripted process to create a user with defined principal with the policy "user". Optionally writes user credentials to keytab file if defined. 
-
-- kaddhost \<fqdn\> \[\<keytabFile\>\]
-
+```
+kaddhost <fqdn> [<keytabFile>]
+```
 Scripted process to create hostname iterations principals with the policy "host".  Optionally adds keys to a keytab file if defined.
-
-- kaddhostsrv \<service\> \<fqdn\> \[\<keytabFile\>\]
-
+```
+kaddhostsrv <service> <fqdn> [<keytabFile>]
+```
 Scripted process to create hostname iterations principals for the defined service (e.g. cifs, nfs, imap, etc.) with the policy "host".  Optionally adds keys to a keytab file if defined.
-
-- kaddmshost \<fqdn\> \[\<keytabFile\>\]
-
+```
+kaddmshost <fqdn> [<keytabFile>]
+```
 Similar to ''kaddhost'', but defines the policy as "host_MS" and performs a user defined password after creation of principal.
-
-- kaddmshostsrv \<service\> \<principal\> \[\<keytabFile\>\]
-
+```
+kaddmshostsrv <service> <principal> [<keytabFile>]
+```
 Similar to ''kaddhostsrv'', but performs a user defined password after creation of principal. 
-
-- kaddlocalhost \<fqdn\>
-
+```
+kaddlocalhost <fqdn>
+```
 Scripted process to create hostname iterations principals with the policy "host", with the output to ''/etc/krb5.keytab''.
-
-- kaddlocalsrv \<service\> \<fqdn\>
+```
+kaddlocalsrv <service> <fqdn>
+```
 Scripted process to create hostname iterations principals for the defined service (e.g. cifs, nfs, imap, etc.) with the policy "host", with the output to ''/etc/krb5.keytab''.
