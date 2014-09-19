@@ -10,9 +10,9 @@ for p in "${service}/${hostnameLC}" "${service}/${hostnameLC^}" "${service}/${ho
 do
 	./kaddprinc "${p}" "-randkey -policy service"
 
+	kadmin.local -q "change_password ${p}"
+
 	if [ -n "${keytab}" ]; then
 		./kaddkeytab "${p}" ${keytab}
 	fi;
-
-	kadmin.local -q "change_password ${p}"
 done

@@ -9,9 +9,9 @@ for p in "host/${hostnameLC}" "host/${hostnameLC^}" "host/${hostnameUC}";
 do
 	./kaddprinc "${p}" "-policy host_MS"
 
+	kadmin.local -q "change_password ${p}"
+
 	if [ -n "${keytab}" ]; then
 		./kaddkeytab "host/${hostnameLC}" ${keytab}
 	fi;
-
-	kadmin.local -q "change_password ${p}"
 done
