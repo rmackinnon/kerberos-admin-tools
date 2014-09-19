@@ -7,14 +7,16 @@ Predefined Policies: user, host, host_MS, service
 
 Usage
 =====
-- kaddprinc <principal> "<options>"
+- kaddprinc \<principal\> "\<options\>"
+
 Runs kadmin.local with command "addprinc"
 
-- kaddkeytab <principal> <keytabFile>
+- kaddkeytab \<principal\> \<keytabFile\>
+
 Runs kadmin.local with command "ktadd"
 
-- kadduser <principal> [<keytabFile>]
-Scripted process to create a user with defined principal with the policy "user". Optionally writes user credentials to keytab file if defined. 
+- kadduser \<principal\> \[\<keytabFile\>\]
+  Scripted process to create a user with defined principal with the policy "user". Optionally writes user credentials to keytab file if defined. 
 
 - kaddhost <fqdn> [<keytabFile>]
 Scripted process to create hostname iterations principals with the policy "host".  Optionally adds keys to a keytab file if defined.
