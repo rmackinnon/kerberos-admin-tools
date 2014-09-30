@@ -2,18 +2,22 @@
 
 [ -e /etc/krb5.d/kutils.conf ] && source /etc/krb5.d/kutils.conf
 
-required=1
+required=2
 required_provided=0
 
 function usage{
-	echo "Usage: `basename $0` -H <fqdn> [-p <policy>] [-k <keytab>] [-R <REALM>]"
+	echo "Usage: `basename $0` -l <loginUser> -H <fqdn> [-p <policy>] [-k <keytab>] [-R <REALM>]"
 }
 
-while getopts "H:k:R:p:h" option;
+while getopts "l:H:k:R:p:h" option;
 do
         case ${option} in
         H) #Required: Host FQDN
                 hostname=${OPTARG}
+                required_provided=$(($required_provided+1));
+        ;;
+        l) #Required: Host FQDN
+                loginUser=${OPTARG}
                 required_provided=$(($required_provided+1));
         ;;
         k) #Optional: Alternative keytab file
@@ -45,6 +49,8 @@ fqdnUC=`echo ${hostname} | tr a-z A-Z`
 hostnameLC=`echo ${hostname} | awk -F. '{print $1}' | tr A-Z a-z`
 hostnameUC=`echo ${hostnameLC} | tr a-z A-Z`
 
+echo "Creating host principals ..."
+
 # Creates: host/hostname.dom.tld@REALM HOST/HOSTNAME.DOM.TLD@REALM
 # and all other iterations
 
@@ -74,3 +80,10 @@ do
 		${appDir}/kaddkeytab -u "${srvhost}" -k ${keytab}
 	fi;
 done
+
+echo "Bootstraping Kerberos files ..."
+scp /etc/krb5.conf $loginUser@${hostname}:/etc/krb5.conf
+scp /root/tmp/${hostname}.keytab $loginUser@${hostname}:/etc/krb5.keytab
+scp /etc/pam.d/system-auth $loginUser@${hostname}:/etc/pam.d/system-auth.krb5
+
+echo "Please remember to update system-auth, and test before removing access."

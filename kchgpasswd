@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if [ -z "${1}" ]; then
+	echo "Usage: `basename $0` <principal>"
+	exit 1;
+fi;
+
+kadmin.local -q "change_password ${princ}"

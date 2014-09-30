@@ -1,14 +1,61 @@
 #!/bin/bash
+[ -e /etc/krb5.d/kutils.conf ] && source /etc/krb5.d/kutils.conf
 
-service=$1
-hostname=$2
-#REALM=$2
-keytab=/etc/krb5.keytab
-hostnameLC=`echo ${hostname} | tr A-Z a-z`
-hostnameUC=`echo ${hostname} | tr a-z A-Z`
+function usage {
+	echo "Usage: `basename $0` -s <service> [-k <keytab:/etc/krb5.keytab>] [-R <REALM>] [-p <policy>]"
+}
 
-for p in "host/${hostnameLC}" "host/${hostnameLC^}" "host/${hostnameUC}";
+required=1
+required_provided=0
+
+hostname=$(hostname)
+keytab="/etc/krb5.keytab"
+
+while getopts "s:k:R:p:h" option;
 do
-	./kaddaddprinc "${p}" "-randkey -policy service"
-	./kaddkeytab "${p}" ${keytab}
+        case ${option} in
+        s) #Required: Service identifier
+                service=${OPTARG}
+                required_provided=$(($required_provided+1));
+        ;;
+        k) #Optional: Alternative keytab file
+                keytab=${OPTARG}
+        ;;
+        R) #Optional: Defined Realm
+                realm=`echo ${OPTARG} | tr a-z A-Z`
+        ;;
+	p) #Optional: User defined policy
+		policy=${OPTARG}
+	;;
+	h)
+		usage;
+		exit 0;
+	;;
+        *)
+                usage;
+                exit 1;
+        esac;
+done
+
+if [ ${required_provided} -lt ${required} ]; then
+        usage;
+        exit 1;
+fi;
+
+serviceLC=`echo ${service} | tr A-Z a-z`
+serviceUC=`echo ${service} | tr a-z A-Z`
+fqdnLC=`echo ${hostname} | tr A-Z a-z`
+fqdnUC=`echo ${hostname} | tr a-z A-Z`
+hostnameLC=`echo ${hostname} | awk -F. '{print $1}' | tr A-Z a-z`
+hostnameUC=`echo ${hostnameLC} | tr a-z A-Z`
+
+for s in "${serviceLC}" "${serviceUC}";
+do
+	for p in "${fqdnLC}" "${fqdnUC}" "${hostnameLC}" "${hostnameUC}";
+	do
+		princ="${s}/${p}"
+		[ -n "${realm}" ] && princ="${princ}@${realm}";
+		${appDir}/kaddaddprinc -u "${princ}" -o "-randkey -policy ${policy:-${defaultServicePolicy}}"
+		${appDir}/kaddkeytab -u "${princ}" -k ${keytab}
+	done
 done

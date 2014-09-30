@@ -1,10 +1,49 @@
 #!/bin/bash
 
-username=$1
-keytab=$2
+[ -e /etc/krb5.d/kutils.conf ] && source /etc/krb5.d/kutils.conf
 
-./kaddprinc "${username}" "-policy user"
+function usage {
+        echo "Usage: `basename $0` -u <username> [-k <keytab>] [-R <REALM>] [-p <policy>]"
+}
+
+required=1
+required_provided=0
+
+while getopts "u:k:R:p:h" option;
+do
+        case ${option} in
+        u) #Required: Service identifier
+                username=${OPTARG}
+                required_provided=$(($required_provided+1));
+        ;;
+        k) #Optional: Alternative keytab file
+                keytab=${OPTARG}
+        ;;
+        R) #Optional: Defined Realm
+                realm=`echo ${OPTARG} | tr a-z A-Z`
+        ;;
+        p) #Optional: User defined policy
+                policy=${OPTARG}
+        ;;
+        h)
+                usage;
+                exit 0;
+        ;;
+        *)
+                usage;
+                exit 1;
+        esac;
+done
+
+if [ ${required_provided} -lt ${required} ]; then
+        usage;
+        exit 1;
+fi;
+
+princ=${username}
+[ -n "${realm}" ] && princ="${princ}@${realm}"
+${appDir}/kaddprinc -u "${princ}" -o "-policy ${policy:-${defaultUserPolicy}}"
 
 if [ -n "${keytab}" ]; then
-	./kaddkeytab "${username}" ${keytab}
+	${appDir}/kaddkeytab -u "${princ}" -k "${keytab}"
 fi;

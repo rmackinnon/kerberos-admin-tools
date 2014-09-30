@@ -1,5 +1,37 @@
 #!/bin/bash
 
-principal=$1
-keytab=$2
+function usage {
+        echo "Usage: `basename $0` -k <keytab:/etc/krb5.keytab> -u <principal>"
+}
+
+required=1
+required_provided=0
+
+keytab="/etc/krb5.keytab"
+
+while getopts "k:u:h" option;
+do
+        case ${option} in
+        k) #Optional: Keytab file definition
+                keytab=${OPTARG}
+        ;;
+        u) #Required: Principal
+                principal=${OPTARG}
+                required_provided=$(($required_provided+1));
+        ;;
+        h)
+                usage;
+                exit 0;
+        ;;
+        *)
+                usage;
+                exit 1;
+        esac;
+done
+
+if [ ${required_provided} -lt ${required} ]; then
+        usage;
+        exit 1;
+fi;
+
 kadmin.local -q "ktadd -k ${keytab} ${principal}"

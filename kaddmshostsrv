@@ -1,18 +1,71 @@
 #!/bin/bash
 
-service=$1
-hostname=$2
-keytab=$3
-hostnameLC=`echo ${hostname} | tr A-Z a-z`
-hostnameUC=`echo ${hostname} | tr a-z A-Z`
+[ -e /etc/krb5.d/kutils.conf ] && source /etc/krb5.d/kutils.conf
 
-for p in "${service}/${hostnameLC}" "${service}/${hostnameLC^}" "${service}/${hostnameUC}";
+function usage {
+        echo "Usage: `basename $0` -s <service> -H <fqdn> [-k <keytab>] [-R <REALM>] [-p <policy>] [-f]"
+}
+
+required=2
+required_provided=0
+
+while getopts "s:H:k:R:p:hf" option;
 do
-	./kaddprinc "${p}" "-randkey -policy service"
+        case ${option} in
+        s) #Required: Service identifier
+                service=${OPTARG}
+                required_provided=$(($required_provided+1));
+        ;;
+        H) #Required: Service identifier
+                hostname=${OPTARG}
+                required_provided=$(($required_provided+1));
+        ;;
+        k) #Optional: Alternative keytab file
+                keytab=${OPTARG}
+        ;;
+        R) #Optional: Defined Realm
+                realm=`echo ${OPTARG} | tr a-z A-Z`
+        ;;
+        p) #Optional: User defined policy
+                policy=${OPTARG}
+        ;;
+	f) #Optional: Force an immediate password change
+		forcePassword=1
+	;;
+        h)
+                usage;
+                exit 0;
+        ;;
+        *)
+                usage;
+                exit 1;
+        esac;
+done
 
-	kadmin.local -q "change_password ${p}"
+if [ ${required_provided} -lt ${required} ]; then
+        usage;
+        exit 1;
+fi;
 
-	if [ -n "${keytab}" ]; then
-		./kaddkeytab "${p}" ${keytab}
-	fi;
+serviceLC=`echo ${service} | tr A-Z a-z`
+serviceUC=`echo ${service} | tr a-z A-Z`
+fqdnLC=`echo ${hostname} | tr A-Z a-z`
+fqdnUC=`echo ${hostname} | tr a-z A-Z`
+hostnameLC=`echo ${hostname} | awk -F. '{print $1}' | tr A-Z a-z`
+hostnameUC=`echo ${hostnameLC} | tr a-z A-Z`
+
+for s in "${serviceLC}" "${serviceUC}";
+do
+	for h in "${fqdnLC}" "${fqdnUC}" "${hostnameLC}" "${hostnameUC}";
+	do
+		princ="${s}/${h};
+		[ -n "${realm}" ] && princ="${princ}@${realm}"
+		${appDir}/kaddprinc -u "${princ}" -o "-policy ${policy:-${defaultMSServicePolicy}}"
+
+		[ -n "${forcePassword}" ] && kchgpasswd "${princ}"
+
+		if [ -n "${keytab}" ]; then
+			${appDir}/kaddkeytab -u "${princ}" -k "${keytab}"
+		fi;
+	done
 done

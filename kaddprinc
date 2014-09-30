@@ -1,5 +1,37 @@
 #!/bin/bash
 
-hostname=$1
-opts=$2
-kadmin.local -q "addprinc ${opts} ${hostname}"
+[ -e /etc/krb5.d/kutils.conf ] && source /etc/krb5.d/kutils.conf
+
+function usage {
+        echo "Usage: kaddprinc -u <principal> [-o <options>]"
+}
+
+required=1
+required_provided=0
+
+while getopts "u:o:h" option;
+do
+        case ${option} in
+        u) #Required: Service identifier
+                princ=${OPTARG}
+                required_provided=$(($required_provided+1));
+        ;;
+        o) #Optional: defined options for principal
+                opts=${OPTARG}
+        ;;
+        h)
+                usage;
+                exit 0;
+        ;;
+        *)
+                usage;
+                exit 1;
+        esac;
+done
+
+if [ ${required_provided} -lt ${required} ]; then
+        usage;
+        exit 1;
+fi;
+
+kadmin.local -q "addprinc ${opts} ${princ}"

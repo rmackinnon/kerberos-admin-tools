@@ -1,17 +1,80 @@
 #!/bin/bash
 
-hostname=$1
-keytab=$2
-hostnameLC=`echo ${hostname} | tr A-Z a-z`
-hostnameUC=`echo ${hostname} | tr a-z A-Z`
+[ -e /etc/krb5.d/kutils.conf ] && source /etc/krb5.d/kutils.conf
 
-for p in "host/${hostnameLC}" "host/${hostnameLC^}" "host/${hostnameUC}";
+function usage {
+        echo "Usage: `basename $0` -H <fqdn> [-k <keytab:/etc/krb5.keytab>] [-R <REALM>] [-p <policy>] [-f]"
+}
+
+required=1
+required_provided=0
+
+while getopts "H:k:R:p:h" option;
 do
-	./kaddprinc "${p}" "-policy host_MS"
+        case ${option} in
+        H) #Required: Principal hostname
+                hostname=${OPTARG}
+		required_provided=$(($required_provided+1))
+        ;;
+        k) #Optional: Alternative keytab file
+                keytab=${OPTARG}
+        ;;
+        R) #Optional: Defined Realm
+                realm=`echo ${OPTARG} | tr a-z A-Z`
+        ;;
+        p) #Optional: User defined policy
+                policy=${OPTARG}
+        ;;
+	f) #Force password change
+		forcePassword=1
+	;;
+        h)
+                usage;
+                exit 0;
+        ;;
+        *)
+                usage;
+                exit 1;
+        esac;
+done
 
-	kadmin.local -q "change_password ${p}"
+if [ ${required_provided} -lt ${required} ]; then
+        usage;
+        exit 1;
+fi;
+
+fqdnLC=`echo ${hostname} | tr A-Z a-z`
+fqdnUC=`echo ${hostname} | tr a-z A-Z`
+hostnameLC=`echo ${hostname} | awk -F. '{print $1}' | tr A-Z a-z`
+hostnameUC=`echo ${hostnameLC} | tr a-z A-Z`
+
+for s in "host" "HOST";
+do
+	#Drop support for uppercase first character
+	# "${fqdnLC^}"
+	for h in "${fqdnLC}" "${fqdnUC}" "${hostnameLC}" "${hostnameUC}";
+	do
+		princ="${s}/${h}";
+		[ -n "${realm}" ] && princ="${princ}@${realm}"
+		${appDir}/kaddprinc -u "${princ}" -o "-policy ${policy:-${defaultMSHostPolicy}}"
+
+		[ -n "${forcePassword}" ] && kchgpasswd "${princ}"
+
+		if [ -n "${keytab}" ]; then
+			${appDir}/kaddkeytab -u "${princ}" -k "${keytab}"
+		fi;
+	done
+done
+
+#Add support for Microsoft Service Accounts
+for srvhost in "${hostnameLC}\$" "${hostnameUC}\$";
+do
+	[ -n "${realm}" ] && princ="${princ}@${realm}"
+	${appDir}/kaddprinc -u "${srvhost}" -o "-policy ${policy:-${defaultMSHostPolicy}}"
+
+	[ -n "${forcePassword}" ] && kchgpasswd "${princ}"
 
 	if [ -n "${keytab}" ]; then
-		./kaddkeytab "host/${hostnameLC}" ${keytab}
+		${appDir}/kaddkeytab -o "${srvhost}" -k "${keytab}"
 	fi;
 done
